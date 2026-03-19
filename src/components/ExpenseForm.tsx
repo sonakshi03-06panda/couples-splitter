@@ -5,7 +5,7 @@ import type { User } from '@/types';
 
 interface ExpenseFormProps {
   users: User[];
-  onExpenseAdded: () => void;
+  onExpenseAdded: (e?: React.MouseEvent) => void;
 }
 
 const CATEGORIES = [
@@ -119,8 +119,14 @@ export default function ExpenseForm({ users, onExpenseAdded }: ExpenseFormProps)
       setDate('');
       setSelectedMembers(new Set());
 
-      // Call callback
-      onExpenseAdded();
+      // Call callback with button click event
+      const submitButton = e.currentTarget.querySelector('button[type="submit"]') as HTMLElement;
+      const buttonEvent = {
+        clientX: submitButton?.getBoundingClientRect().left ?? window.innerWidth / 2,
+        clientY: submitButton?.getBoundingClientRect().top ?? window.innerHeight / 2,
+      } as React.MouseEvent;
+      
+      onExpenseAdded(buttonEvent);
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000);
@@ -132,32 +138,37 @@ export default function ExpenseForm({ users, onExpenseAdded }: ExpenseFormProps)
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-4">Add Expense</h2>
+    <div className="rpg-dialog">
+      <h2 className="rpg-dialog-title">
+        <span>🛒</span>
+        Add Expense
+      </h2>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
+        <div className="rpg-popup rpg-popup-error">
+          <span className="rpg-popup-icon">⚠️</span>
+          <span className="rpg-popup-text">{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-          Expense added successfully!
+        <div className="rpg-popup rpg-popup-success">
+          <span className="rpg-popup-icon">✅</span>
+          <span className="rpg-popup-text">Expense Added!</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit}>
         {/* Who Paid */}
-        <div>
-          <label htmlFor="payer" className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="rpg-input-box">
+          <label htmlFor="payer" className="rpg-input-label">
+            <span className="rpg-input-icon">👤</span>
             Who Paid?
           </label>
           <select
             id="payer"
             value={payerId}
             onChange={(e) => setPayerId(e.target.value ? Number(e.target.value) : '')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={loading}
           >
             <option value="">Select a person</option>
@@ -170,8 +181,9 @@ export default function ExpenseForm({ users, onExpenseAdded }: ExpenseFormProps)
         </div>
 
         {/* Amount */}
-        <div>
-          <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="rpg-input-box">
+          <label htmlFor="amount" className="rpg-input-label">
+            <span className="rpg-input-icon">💰</span>
             Amount
           </label>
           <input
@@ -182,21 +194,20 @@ export default function ExpenseForm({ users, onExpenseAdded }: ExpenseFormProps)
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0.00"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={loading}
           />
         </div>
 
         {/* Category */}
-        <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="rpg-input-box">
+          <label htmlFor="category" className="rpg-input-label">
+            <span className="rpg-input-icon">🏷️</span>
             Category
           </label>
           <select
             id="category"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={loading}
           >
             <option value="">Select a category</option>
@@ -209,8 +220,9 @@ export default function ExpenseForm({ users, onExpenseAdded }: ExpenseFormProps)
         </div>
 
         {/* Date */}
-        <div>
-          <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="rpg-input-box">
+          <label htmlFor="date" className="rpg-input-label">
+            <span className="rpg-input-icon">📅</span>
             Date
           </label>
           <input
@@ -218,36 +230,38 @@ export default function ExpenseForm({ users, onExpenseAdded }: ExpenseFormProps)
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={loading}
           />
         </div>
 
         {/* Members to Split Among */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="rpg-checkbox-grid">
+          <div className="rpg-checkbox-grid-title">
+            <span>👥</span>
             Split Among
-          </label>
-          <div className="space-y-2 border border-gray-300 rounded-md p-3 bg-gray-50">
+          </div>
+          <div className="rpg-checkbox-list">
             {users.length === 0 ? (
-              <p className="text-sm text-gray-500">No users available</p>
+              <p className="text-sm text-retro-dark-brown font-medium">No users available</p>
             ) : (
               users.map((user) => (
-                <label key={user.id} className="flex items-center">
+                <label
+                  key={user.id}
+                  htmlFor={`member-${user.id}`}
+                  className="rpg-member-checkbox"
+                >
                   <input
+                    id={`member-${user.id}`}
                     type="checkbox"
                     checked={selectedMembers.has(user.id)}
                     onChange={() => toggleMember(user.id)}
                     disabled={loading}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700 flex items-center">
-                    <span
-                      className="inline-block w-3 h-3 rounded-full mr-2"
-                      style={{ backgroundColor: user.color }}
-                    />
-                    {user.name}
-                  </span>
+                  <div
+                    className="rpg-member-checkbox-square"
+                    style={{ backgroundColor: user.color }}
+                  />
+                  <span className="rpg-member-name">{user.name}</span>
                 </label>
               ))
             )}
@@ -258,9 +272,9 @@ export default function ExpenseForm({ users, onExpenseAdded }: ExpenseFormProps)
         <button
           type="submit"
           disabled={loading || users.length === 0}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
+          className="rpg-submit-button"
         >
-          {loading ? 'Adding...' : 'Add Expense'}
+          {loading ? '⏳ Processing...' : '✓ Confirm'}
         </button>
       </form>
     </div>

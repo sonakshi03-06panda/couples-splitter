@@ -27,6 +27,29 @@ function formatAmount(amount: number): string {
   return `$${amount.toFixed(2)}`;
 }
 
+/**
+ * Get emoji for category
+ */
+function getCategoryEmoji(category: string): string {
+  const emojiMap: Record<string, string> = {
+    FOOD: '🍕',
+    UTILITIES: '💡',
+    TRANSPORT: '🚗',
+    ENTERTAINMENT: '🎬',
+    GROCERIES: '🛒',
+    DINING: '🍽️',
+    GAS: '⛽',
+    SHOPPING: '🛍️',
+    MOVIE: '🎬',
+    TRAVEL: '✈️',
+    UTILITIES_ELECTRIC: '💡',
+    UTILITIES_WATER: '💧',
+    UTILITIES_GAS: '🔥',
+    OTHER: '💸',
+  };
+  return emojiMap[category] || '💰';
+}
+
 export default function ExpenseList({ expenses, users, onDelete }: ExpenseListProps) {
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -62,10 +85,12 @@ export default function ExpenseList({ expenses, users, onDelete }: ExpenseListPr
   if (expenses.length === 0) {
     return (
       <div className="w-full">
-        <h2 className="text-2xl font-bold mb-4">Expenses</h2>
-        <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-6 text-center">
-          <p className="text-gray-600 text-lg">No expenses yet</p>
-          <p className="text-gray-500 text-sm mt-1">Add an expense to get started</p>
+        <h2 className="expense-list-title">📝 EXPENSE HISTORY</h2>
+        <div className="expense-empty-state">
+          <div className="expense-empty-icon">🐷</div>
+          <div className="expense-empty-title">NO EXPENSES YET!</div>
+          <div className="expense-empty-message">Start tracking your expenses together</div>
+          <button className="expense-empty-button">💰 Add Your First Expense</button>
         </div>
       </div>
     );
@@ -73,64 +98,86 @@ export default function ExpenseList({ expenses, users, onDelete }: ExpenseListPr
 
   return (
     <div className="w-full">
-      <h2 className="text-2xl font-bold mb-4">Expenses</h2>
-      <div className="overflow-x-auto shadow-md rounded-lg">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-200 border-b-2 border-gray-400">
-              <th className="px-4 py-3 text-left font-semibold text-gray-700">Date</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700">Category</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700">Paid By</th>
-              <th className="px-4 py-3 text-right font-semibold text-gray-700">Amount</th>
-              <th className="px-4 py-3 text-center font-semibold text-gray-700">Action</th>
+      <h2 className="expense-list-title">📝 EXPENSE HISTORY</h2>
+      <div className="expense-list-container">
+        <table className="expense-table">
+          {/* Header - Desktop Only */}
+          <thead className="expense-table-header">
+            <tr className="expense-table-header-row">
+              <th className="expense-table-header-cell">📅 DATE</th>
+              <th className="expense-table-header-cell">🏷️ CATEGORY</th>
+              <th className="expense-table-header-cell">👤 PAID BY</th>
+              <th className="expense-table-header-cell">💰 AMOUNT</th>
+              <th className="expense-table-header-cell">⚙️ ACTION</th>
             </tr>
           </thead>
-          <tbody>
-            {expenses.map((expense, index) => {
+
+          {/* Body */}
+          <tbody className="expense-table-body">
+            {expenses.map((expense) => {
               const payer = userMap.get(expense.payerId);
+              const categoryEmoji = getCategoryEmoji(expense.category.toUpperCase());
 
               return (
-                <tr
-                  key={expense.id}
-                  className={`border-b border-gray-300 hover:bg-gray-50 transition-colors ${
-                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                  }`}
-                >
+                <tr key={expense.id} className="expense-row">
                   {/* Date */}
-                  <td className="px-4 py-3 text-gray-800">
-                    {formatDate(expense.date)}
+                  <td className="expense-cell">
+                    <span className="expense-cell-label">📅 Date</span>
+                    <span className="expense-cell-value">{formatDate(expense.date)}</span>
                   </td>
 
                   {/* Category */}
-                  <td className="px-4 py-3 text-gray-800">{expense.category}</td>
+                  <td className="expense-cell">
+                    <span className="expense-cell-label">🏷️ Category</span>
+                    <span className="expense-cell-value expense-category-cell">
+                      <span className="expense-category-icon">{categoryEmoji}</span>
+                      {expense.category}
+                    </span>
+                  </td>
 
                   {/* Paid By */}
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {payer && (
-                        <span
-                          className="inline-block w-3 h-3 rounded-full"
-                          style={{ backgroundColor: payer.color }}
-                        />
-                      )}
-                      <span className="text-gray-800">{payer?.name || 'Unknown'}</span>
-                    </div>
+                  <td className="expense-cell">
+                    <span className="expense-cell-label">👤 Paid By</span>
+                    <span className="expense-cell-value">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {payer && (
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              width: '12px',
+                              height: '12px',
+                              borderRadius: '2px',
+                              border: '1px solid #5C4033',
+                              backgroundColor: payer.color,
+                            }}
+                          />
+                        )}
+                        <span>{payer?.name || 'Unknown'}</span>
+                      </div>
+                    </span>
                   </td>
 
                   {/* Amount */}
-                  <td className="px-4 py-3 text-right font-semibold text-gray-800">
-                    {formatAmount(expense.amount)}
+                  <td className="expense-cell">
+                    <span className="expense-cell-label">💰 Amount</span>
+                    <span className="expense-cell-value expense-amount-cell">
+                      {formatAmount(expense.amount)}
+                    </span>
                   </td>
 
                   {/* Action */}
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => handleDelete(expense.id)}
-                      disabled={deletingId === expense.id}
-                      className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-medium py-1 px-3 rounded transition-colors text-sm"
-                    >
-                      {deletingId === expense.id ? 'Deleting...' : 'Delete'}
-                    </button>
+                  <td className="expense-cell">
+                    <span className="expense-cell-label">⚙️ Action</span>
+                    <span className="expense-cell-value">
+                      <button
+                        onClick={() => handleDelete(expense.id)}
+                        disabled={deletingId === expense.id}
+                        className="expense-delete-btn"
+                      >
+                        🗑️
+                        <span>{deletingId === expense.id ? 'DELETING...' : 'DELETE'}</span>
+                      </button>
+                    </span>
                   </td>
                 </tr>
               );

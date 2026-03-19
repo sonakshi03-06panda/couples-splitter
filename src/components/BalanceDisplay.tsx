@@ -1,6 +1,7 @@
 'use client';
 
 import type { BalanceData, User } from '@/types';
+import { useCounterAnimation, useAnimateOnChange } from '@/hooks/useCounterAnimation';
 
 interface BalanceDisplayProps {
   balances: BalanceData;
@@ -17,61 +18,57 @@ export default function BalanceDisplay({ balances, users }: BalanceDisplayProps)
     .sort((a, b) => a - b);
 
   return (
-    <div className="w-full">
-      <h2 className="text-2xl font-bold mb-4">Current Balances</h2>
+    <div className="balance-display-container">
+      <h2 className="text-2xl font-bold mb-6 text-retro-dark-brown">💵 Current Balances</h2>
 
       {sortedUserIds.length === 0 ? (
-        <p className="text-gray-500">No balance data available</p>
+        <div className="balance-empty-state">
+          <p>No balance data available</p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="balance-grid">
           {sortedUserIds.map((userId) => {
             const balance = balances[userId];
             const user = userMap.get(userId);
+            const isOwed = balance > 0;
+            const absoluteBalance = Math.abs(balance);
+            
+            // Use counter animation for the amount
+            const animatedAmount = useCounterAnimation(absoluteBalance, 1000);
+            const shouldAnimate = useAnimateOnChange(balance);
 
             if (!user) return null;
 
-            const isOwed = balance > 0;
-            const absoluteBalance = Math.abs(balance);
-            const formattedBalance = `$${absoluteBalance.toFixed(2)}`;
+            const formattedBalance = `$${animatedAmount.toFixed(2)}`;
 
             return (
-              <div
-                key={userId}
-                className={`rounded-lg shadow-md p-4 ${
-                  isOwed ? 'bg-green-100 border-2 border-green-400' : 'bg-red-100 border-2 border-red-400'
-                }`}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2 flex-1">
-                    {/* Color Dot */}
-                    <span
-                      className="inline-block w-4 h-4 rounded-full shrink-0"
-                      style={{ backgroundColor: user.color }}
-                    />
-                    {/* User Name */}
-                    <h3 className="text-lg font-semibold text-gray-800 truncate">
-                      {user.name}
-                    </h3>
-                  </div>
+              <div key={userId} className="balance-card game-card-hover">
+                {/* Header: Avatar + Name */}
+                <div className="balance-card-header">
+                  <div
+                    className="balance-card-avatar"
+                    style={{ backgroundColor: user.color }}
+                    title={user.name}
+                  />
+                  <h3 className="balance-card-name">{user.name}</h3>
                 </div>
 
-                {/* Balance Text */}
-                <div
-                  className={`text-2xl font-bold ${
-                    isOwed ? 'text-green-700' : 'text-red-700'
-                  }`}
+                {/* Amount - VERY LARGE with animation */}
+                <div 
+                  className={`balance-card-amount ${isOwed ? 'owed' : 'owes'} counter-number ${shouldAnimate ? 'animating' : ''}`}
                 >
                   {formattedBalance}
                 </div>
 
-                {/* Status Label */}
-                <p
-                  className={`text-sm mt-2 ${
-                    isOwed ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {isOwed ? '✓ Owed Money' : '✗ Owes Money'}
-                </p>
+                {/* Status Label with Icon */}
+                <div className="balance-card-status">
+                  <span className="balance-card-status-icon">
+                    {isOwed ? '✅' : '⚠️'}
+                  </span>
+                  <span className="balance-card-status-label">
+                    {isOwed ? 'Is Owed' : 'Owes'}
+                  </span>
+                </div>
               </div>
             );
           })}

@@ -1,10 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import PixelArtBackground from '@/components/PixelArtBackground';
 import ExpenseForm from '@/components/ExpenseForm';
 import BalanceDisplay from '@/components/BalanceDisplay';
 import SettlementSuggestions from '@/components/SettlementSuggestions';
 import ExpenseList from '@/components/ExpenseList';
+import { ParticleSystem } from '@/components/ParticleSystem';
+import { useParticles, useSound } from '@/hooks/useParticles';
+import { useDarkMode } from '@/hooks/useDarkMode';
 import type { User, Expense, BalanceData, Settlement } from '@/types';
 
 export default function Home() {
@@ -14,6 +18,10 @@ export default function Home() {
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  
+  const { particles, burst } = useParticles();
+  const { playSuccess, playDing } = useSound();
+  const { isDarkMode, toggleDarkMode, isLoaded } = useDarkMode();
 
   /**
    * Fetch all data from APIs
@@ -65,31 +73,95 @@ export default function Home() {
   };
 
   /**
-   * Handle expense added
+   * Handle expense added - trigger particles and sound
    */
-  const handleExpenseAdded = () => {
+  const handleExpenseAdded = (e?: React.MouseEvent) => {
+    // Get button position for particles
+    const x = e?.clientX ?? window.innerWidth / 2;
+    const y = e?.clientY ?? window.innerHeight / 2;
+    
+    // Trigger gold sparkles
+    burst(x, y, {
+      type: 'sparkle',
+      color: '#FFD700',
+      count: 5,
+      duration: 1000,
+      spread: 'up',
+    });
+    
+    // Play success sound
+    playSuccess();
+    
     refreshData();
   };
 
-  return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      {/* Header */}
-      <header className="bg-blue-600 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-4xl font-bold">💰 Couples Expense Splitter</h1>
-          <p className="text-blue-100 mt-2">Split expenses fairly and track who owes whom</p>
-        </div>
-      </header>
+  /**
+   * Handle settlement marked as paid - trigger particles and sound
+   */
+  const handleSettlementPaid = (x: number = window.innerWidth / 2, y: number = window.innerHeight / 2) => {
+    // Trigger green checkmarks
+    burst(x, y, {
+      type: 'checkmark',
+      color: '#A8D77B',
+      count: 8,
+      duration: 1500,
+      spread: 'down',
+    });
+    
+    // Play ding sound
+    playDing();
+  };
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+  return (
+    <main className="min-h-screen bg-retro-cream relative">
+      {/* Pixel Art Background */}
+      <PixelArtBackground />
+
+      {/* Particle System */}
+      <ParticleSystem particles={particles} />
+
+      {/* Content Overlay */}
+      <div className="relative z-10">
+        {/* Pixel Art Header */}
+        <header className="pixel-header">
+          <div className="pixel-header-content">
+            {/* Left: Icon and Text */}
+            <div className="pixel-header-left">
+              <div className="pixel-header-icon">
+                👥
+              </div>
+              <div className="pixel-header-text">
+                <h1 className="pixel-header-title">💰 Expense Splitter</h1>
+                <p className="pixel-header-subtitle">Split Expenses, Stay Friends! 💪</p>
+              </div>
+            </div>
+
+            {/* Right: Settings Icon (optional) */}
+            <div className="pixel-header-right">
+              <button 
+                onClick={toggleDarkMode}
+                className="dark-mode-toggle" 
+                title={isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                disabled={!isLoaded}
+              >
+                {isDarkMode ? '☀️ LIGHT' : '🌙 DARK'}
+              </button>
+              <button className="pixel-header-action" title="Settings">
+                ⚙️
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-            <p className="font-semibold">Error: {error}</p>
+          <div className="mb-6 p-4 bg-retro-soft-yellow border-2 border-retro-dark-brown text-retro-red-highlight rounded-lg font-medium">
+            <p className="font-semibold">⚠️ Error: {error}</p>
             <button
               onClick={refreshData}
-              className="mt-2 bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded text-sm"
+              className="mt-2 btn btn-primary btn-sm"
             >
               Try Again
             </button>
@@ -99,8 +171,8 @@ export default function Home() {
         {/* Loading State */}
         {loading ? (
           <div className="flex flex-col items-center justify-center min-h-96">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
-            <p className="text-gray-600 text-lg">Loading...</p>
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-retro-red-highlight mb-4"></div>
+            <p className="text-retro-dark-brown text-lg font-semibold">Loading...</p>
           </div>
         ) : (
           <div className="space-y-8">
@@ -118,12 +190,12 @@ export default function Home() {
             </div>
 
             {/* Settlement Suggestions */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <SettlementSuggestions settlements={settlements} />
+            <div className="bg-retro-beige rounded-lg shadow-md p-6 border-2 border-retro-dark-brown">
+              <SettlementSuggestions settlements={settlements} onSettlementPaid={handleSettlementPaid} />
             </div>
 
             {/* Expenses Table */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-retro-beige rounded-lg shadow-md p-6 border-2 border-retro-dark-brown">
               <ExpenseList
                 expenses={expenses}
                 users={users}
@@ -135,19 +207,20 @@ export default function Home() {
             <div className="flex justify-center">
               <button
                 onClick={refreshData}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-colors"
+                className="btn btn-secondary btn-lg"
               >
                 🔄 Refresh Data
               </button>
             </div>
           </div>
         )}
-      </div>
+        </div>
 
-      {/* Footer */}
-      <footer className="bg-gray-800 text-gray-300 py-6 mt-12 text-center">
-        <p>Made with ❤️ for couples who split expenses</p>
-      </footer>
+        {/* Footer */}
+        <footer className="bg-retro-dark-brown text-retro-beige py-8 mt-12 text-center border-t-4 border-retro-light-brown">
+          <p className="font-semibold">Made with ❤️ for couples who split expenses</p>
+        </footer>
+      </div>
     </main>
   );
 }
