@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { calculateBalances, calculateSettlements } from '@/lib/expenses';
-import type { Expense, ExpenseMember, User } from '@/types';
+import type { Expense, User } from '@/types';
 
 /**
  * Creates a new expense with associated members
@@ -73,7 +73,7 @@ export async function getAllExpenses(): Promise<Expense[]> {
       },
     });
 
-    return expenses.map((expense) => ({
+    return expenses.map((expense): Expense => ({
       id: expense.id,
       amount: expense.amount,
       category: expense.category,
